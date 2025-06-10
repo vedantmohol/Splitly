@@ -192,3 +192,23 @@ export const updateExpense = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteExpense = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deletedExpense = await Expense.findByIdAndDelete(id);
+
+    if (!deletedExpense) {
+      return next(errorHandler(404, "Expense not found or Invalid Expense"));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: deletedExpense,
+      message: "Expense deleted successfully"
+    });
+  } catch (error) {
+    next(error);
+  }
+};
