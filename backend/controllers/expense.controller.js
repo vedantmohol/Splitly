@@ -85,3 +85,16 @@ export const addExpense = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getExpenses = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      data: expenses,
+      message: "All expenses fetched successfully",
+    });
+  } catch (err) {
+    next(errorHandler(500, "Failed to fetch expenses"));
+  }
+};
