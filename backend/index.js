@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import expenseRoutes from './routes/expense.route.js';
+import settlementRoutes from'./routes/settlement.route.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.listen(3000, () => {
 })
 
 app.use('/api/expense',expenseRoutes);
+app.use('/api/settlements',settlementRoutes);
 
 app.use((err,req,res,next)=>{
     const statusCode = err.statusCode || 500;
