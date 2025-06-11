@@ -9,12 +9,77 @@ const calculateNetBalances = (expenses) => {
 
     balances[paid_by] = (balances[paid_by] || 0) + amount;
 
-    for (let person in splits) {
-      balances[person] = (balances[person] || 0) - splits[person];
+    const entries = (splits instanceof Map) ? splits.entries() : Object.entries(splits);
+    for (const [person, splitAmount] of entries) {
+      balances[person] = (balances[person] || 0) - splitAmount;
     }
   });
 
   return balances;
+};
+
+// Greedy algorithm to minimize transactions
+const simplifyDebts = (balances) => {
+  const creditors = [];
+  const debtors = [];
+
+  for (const person in balances) {
+    const balance = parseFloat(balances[person].toFixed(2));
+    if (balance > 0) creditors.push({ person, amount: balance });
+    else if (balance < 0) debtors.push({ person, amount: -balance });
+  }
+
+  creditors.sort((a, b) => b.amount - a.amount);
+  debtors.sort((a, b) => b.amount - a.amount);
+
+  const settlements = [];
+
+  let i = 0, j = 0;
+
+  while (i < debtors.length && j < creditors.length) {
+    const debtor = debtors[i];
+    const creditor = creditors[j];
+
+    const minAmount = Math.min(debtor.amount, creditor.amount);
+    settlements.push({
+      from: debtor.person,
+      to: creditor.person,
+      amount: parseFloat(minAmount.toFixed(2))
+    });
+
+    debtor.amount -= minAmount;
+    creditor.amount -= minAmount;
+
+    if (debtor.amount === 0) i++;
+    if (creditor.amount === 0) j++;
+  }
+
+  return settlements;
+};
+
+export const getSettlementSummary = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+
+    if (!expenses || expenses.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No expenses found yet. Nothing to settle.",
+      });
+    }
+
+    const balances = calculateNetBalances(expenses);
+    const settlements = simplifyDebts(balances);
+
+    res.status(200).json({
+      success: true,
+      data: settlements,
+      message: "Settlement summary calculated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getBalances = async (req, res, next) => {
